@@ -482,9 +482,10 @@ parseSetTag = lexeme lang $ do
 replaceForbidden :: Maybe Text -> Maybe Text
 replaceForbidden = fmap $ T.map go
   where
-    go c | isAlphaNum c  = c
-         | c `elem` "-_" = c
-         | otherwise     = '_'
+    go c | isAlphaNum c    = c
+         | c `elem` "-_./" = c
+         | c == '\\'       = '/'
+         | otherwise       = '_'
 
 parseTagPart :: Parser (Ctx -> Maybe Text)
 parseTagPart = do parts <- many1 (choice
