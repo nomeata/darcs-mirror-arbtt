@@ -1,0 +1,124 @@
+
+/**************************** FULL-HEIGHT SIDEBAR *****************************/
+html, body {
+	margin: 0;
+	height: 100%;
+}
+
+#wrapper {
+	min-height: 100%;
+	height: auto !important;
+	height: 100%;
+	margin: 0 auto;
+	position: relative;
+}
+
+section {
+	padding: 1rem;
+}
+
+nav {
+	width: 20rem;
+	position: fixed;
+	left: 0;
+	top: 0;
+	bottom: 0;
+	/* only for visual indication of layout.
+	 * should be overriden in visual styles. */
+	background: silver;
+}
+
+#content {
+	margin-left: 20rem;max-width:60em;
+}
+
+section[id]:not(:target) { display: none; }
+
+/****************************** VISUAL STYLES ******************************/
+
+body {
+	font-family: sans-serif;
+}
+#wrapper:before { /* alternative image: http://upload.wikimedia.org/wikipedia/commons/9/96/Simon_Lachez_zakhorloge.jpg */
+	/* Freely licensed image from http://commons.wikimedia.org/wiki/File:Revolutionstaschenuhr.jpg */
+	background: right top url("page-bg.jpg") no-repeat;
+	height:100%;
+	width:100%;
+	opacity: 0.1;
+	position: fixed;
+	top:0;
+	right:0;
+	content: "";
+	z-index:-1;
+}
+
+#content {
+	color: #456;
+	font-size: 85%;
+}
+
+nav {
+	background-color: #445F66;
+	color: white;
+	border-right: 4px solid #DACFB5;
+}
+
+nav > ul {
+	list-style: none;
+	text-align: right;
+}
+nav > ul > li > a.active {
+	font-weight: bold;
+	color: Gold;
+}
+
+nav > ul > li > a {
+	color: white;
+	font-weight: bold;
+	display: block;
+	padding: 0.5em;
+}
+
+a {
+	color: OrangeRed;
+	text-decoration: none;
+}
+
+a:hover {
+	text-decoration: underline;
+}
+
+a:focus {
+	outline: none;
+}
+
+h1 {
+	font-size: 4em;
+	text-shadow: 2px 2px 3px rgba(255,255,255,0.2), -2px -2px 3px rgba(0,0,0,0.2);
+}
+
+.title {
+	text-align: center;
+	margin: 0;
+}
+
+code, pre {
+	background: #eee;
+	font-size: 115%;
+}
+
+pre {
+	padding: 1em;
+}
+
+.command:before {
+	content: "$ ";
+}
+
+li p {
+	margin: 0;
+}
+
+.installation li {
+	margin-top: 1em;
+}

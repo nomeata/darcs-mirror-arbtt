@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>arbtt-dump</title><link rel="stylesheet" type="text/css" href="fptools.css" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="home" href="index.html" title="arbtt – The Automatic Rule-Base Time Tracker" /><link rel="up" href="references.html" title="Program references" /><link rel="prev" href="arbtt-capture.html" title="arbtt-capture" /><link rel="next" href="arbtt-import.html" title="arbtt-import" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">arbtt-dump</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="arbtt-capture.html">Prev</a> </td><th width="60%" align="center">Program references</th><td width="20%" align="right"> <a accesskey="n" href="arbtt-import.html">Next</a></td></tr></table><hr /></div><div class="refentry"><a id="arbtt-dump"></a><div class="titlepage"></div><div class="refnamediv"><h2>Name</h2><p>arbtt-dump — dumps arbtt data samples</p></div><div class="refsynopsisdiv"><h2>Synopsis</h2><div class="cmdsynopsis"><p><code class="command">arbtt-dump</code>  [OPTION...]</p></div></div><div class="refsect1"><a id="idp946"></a><h2>Description</h2><p>
+      <span class="command"><strong>arbtt-dump</strong></span> reads the data samples recorded by <a class="xref" href="arbtt-capture.html" title="arbtt-capture"><span class="refentrytitle">arbtt-capture</span>(1)</a> and writes them so the standard output in an
+      ascii based format.
+      </p></div><div class="refsect1"><a id="idp951"></a><h2>Options</h2><div class="variablelist"><dl class="variablelist"><dt><span class="term"><code class="option">-h</code>, </span><span class="term"><code class="option">-?</code>, </span><span class="term"><code class="option">--help</code></span></dt><dd>shows a short summary of the available
+          options, and exists.</dd><dt><span class="term"><code class="option">-V</code>, </span><span class="term"><code class="option">--version</code></span></dt><dd>shows the version number, and exists.</dd><dt><span class="term"><code class="option">-f</code> <em class="replaceable"><code>FILE</code></em>, </span><span class="term"><code class="option">--logfile</code> <em class="replaceable"><code>FILE</code></em></span></dt><dd>logfile to use instead of <code class="filename">~/.arbtt/capture.log</code></dd><dt><span class="term"><code class="option">-t</code> <em class="replaceable"><code>FORMAT</code></em>, </span><span class="term"><code class="option">--format</code> <em class="replaceable"><code>FORMAT</code></em></span></dt><dd>dumping format to use, where <em class="replaceable"><code>FORMAT</code></em> is one of <code class="literal">human</code> (the default), <code class="literal">show</code> or <code class="literal">JSON</code>. Case in-sensitive.</dd><dt><span class="term"><code class="option">-l</code> <em class="replaceable"><code>NUMBER</code></em>, </span><span class="term"><code class="option">--last</code> <em class="replaceable"><code>NUMBER</code></em></span></dt><dd>dump only the last <em class="replaceable"><code>NUMBER</code></em> of samples.</dd></dl></div></div><div class="refsect1"><a id="idp1003"></a><h2>Files</h2><div class="variablelist"><dl class="variablelist"><dt><span class="term"><code class="filename">~/.arbtt/capture.log</code></span></dt><dd><p>binary file, storing the arbtt data samples</p></dd></dl></div></div><div class="refsect1"><a id="idp1011"></a><h2>Formats</h2><div class="refsect2"><a id="idp1013"></a><h3>Human</h3><p>This format is intended for human inspection, but not for further
+      processing. Hence, it may change in new versions of arbtt without notice.
+      Example output:</p><pre class="screen">2013-06-20 14:53:50 (48ms inactive):
+    ( ) Navigator:      arbtt-dump - Iceweasel
+    ( ) gnome-terminal-server: jojo@kirk:~/projekte/programming/arbtt/doc
+    (*) gvim:           arbtt.xml + (~/projekte/programming/arbtt/doc) - GVIM2
+</pre><p>The line with a star indicates the currently active window.</p></div><div class="refsect2"><a id="idp1018"></a><h3>Show</h3><p>This is the default serialization format of Haskell's
+      <code class="literal">Show</code> type class, one entry per line. This can be
+      useful if the data is to be processed by further Haskell code. Example
+      output, with indentation added manually:</p><pre class="screen">TimeLogEntry
+    { tlTime = 2013-06-20 14:53:50.957763 UTC
+    , tlRate = 60000
+    , tlData = CaptureData
+        { cWindows =
+            [ (False,"arbtt-dump - Iceweasel","Navigator")
+            , (False,"jojo@kirk:~/projekte/programming/arbtt/doc","gnome-terminal-server")
+            , (True,"arbtt.xml + (~/projekte/programming/arbtt/doc) - GVIM2","gvim")
+            ]
+        , cLastActivity = 48
+        }
+    }</pre></div><div class="refsect2"><a id="idp1023"></a><h3>JSON</h3><p>For interoperability, arbtt supports dumping its data to JSON, which can
+      easily be parsed by many different programming languages. Some level of
+      backward-compatibility will be provided, as far as possible. Default
+      output, again with indentation and spacing added manually:</p><pre class="screen">[ ...,
+  { "windows": [
+      { "program": "arbtt-dump - Iceweasel",
+        "title": "Navigator",
+        "active": false},
+      { "program": "jojo@kirk:~/projekte/programming/arbtt/doc",
+        "title":" gnome-terminal-server",
+        "active": false},
+      { "program": "arbtt.xml + (~/projekte/programming/arbtt/doc) - GVIM2",
+        "title": "gvim",
+        "active":true
+      }],
+    "inactive": 48,
+    "date": "2013-06-20T14:53:50.957Z",
+    "rate": 60000},
+  ...
+]</pre></div></div><div class="refsect1"><a id="idp1027"></a><h2>See also</h2><p>See the arbtt manual for more information and the <a class="ulink" href="http://hackage.haskell.org/package/arbtt" target="_top">arbtt hackage page</a> for
+      newer versions of arbtt.</p></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="arbtt-capture.html">Prev</a> </td><td width="20%" align="center"><a accesskey="u" href="references.html">Up</a></td><td width="40%" align="right"> <a accesskey="n" href="arbtt-import.html">Next</a></td></tr><tr><td width="40%" align="left" valign="top">arbtt-capture </td><td width="20%" align="center"><a accesskey="h" href="index.html">Home</a></td><td width="40%" align="right" valign="top"> arbtt-import</td></tr></table></div></body></html>

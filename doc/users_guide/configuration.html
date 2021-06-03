@@ -1,0 +1,344 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Configuring the arbtt categorizer (arbtt-stats)</title><link rel="stylesheet" type="text/css" href="fptools.css" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="home" href="index.html" title="arbtt – The Automatic Rule-Base Time Tracker" /><link rel="up" href="index.html" title="arbtt – The Automatic Rule-Base Time Tracker" /><link rel="prev" href="index.html" title="arbtt – The Automatic Rule-Base Time Tracker" /><link rel="next" href="effective-use.html" title="Effective Use of Arbtt" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">Configuring the arbtt categorizer (<span class="command"><strong>arbtt-stats</strong></span>)</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="index.html">Prev</a> </td><th width="60%" align="center"> </th><td width="20%" align="right"> <a accesskey="n" href="effective-use.html">Next</a></td></tr></table><hr /></div><div class="sect1"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a id="configuration"></a>Configuring the arbtt categorizer (<span class="command"><strong>arbtt-stats</strong></span>)</h2></div></div></div><p>
+  Once <span class="command"><strong>arbtt-capture</strong></span> is running, it will record data without
+  any configuration. And only to analyze the recorded data, one needs to
+  configure the categorizer. Everytime the categorizer
+  (<span class="command"><strong>arbtt-stats</strong></span>) runs, it applies categorization rules to all
+  recorded data and tags it accordingly.  Thus, if you improve your
+  categorization rules later, they will apply also to all previous data
+  samples!
+  </p><div class="sect2"><div class="titlepage"><div><div><h3 class="title"><a id="idp6"></a>Configuration example</h3></div></div></div><p>
+  The configuration file needs to be placed in
+  <code class="filename">~/.arbtt/categorize.cfg</code>. An
+  example is included in the source distribution, and it is reproduced here:
+  see <a class="xref" href="configuration.html#catex" title="Example 1. categorize.cfg">Example 1, “<code class="filename">categorize.cfg</code>”</a>.
+  It should be more enlightening than a formal description.
+  </p><div class="example"><a id="catex"></a><p class="title"><strong>Example 1. <code class="filename">categorize.cfg</code></strong></p><div class="example-contents"><pre class="programlisting">-- -*- mode: haskell; -*-
+-- Comments in this file use the Haskell syntax:
+-- A "--" comments the rest of the line.
+-- A set of {- ... -} comments out a group of lines.
+
+-- This defines some aliases, to make the reports look nicer:
+aliases (
+	"sun-awt-X11-XFramePeer"  -&gt; "java",
+	"sun-awt-X11-XDialogPeer" -&gt; "java",
+	"sun-awt-X11-XWindowPeer" -&gt; "java",
+	"gramps.py"               -&gt; "gramps",
+	"___nforschung"           -&gt; "ahnenforschung",
+	"Pidgin"                  -&gt; "pidgin"
+	)
+
+-- A rule that probably everybody wants. Being inactive for over a minute
+-- causes this sample to be ignored by default.
+$idle &gt; 60 ==&gt; tag inactive,
+
+-- A rule that matches on a list of strings
+current window $program == ["Navigator","galeon"] ==&gt; tag Web,
+
+-- Use condition bindings to reduce duplication
+condition isJava = current window $program ==
+  ["sun-awt-X11-XFramePeer", "sun-awt-X11-XDialogPeer", "sun-awt-X11-XWindowPeer"]
+in $isJava &amp;&amp; current window $title == "I3P" ==&gt; tag Program:I3P,
+
+current window $program == "sun-awt-X11-XDialogPeer" &amp;&amp;
+current window $title == " " &amp;&amp;
+any window $title == "I3P"
+  ==&gt; tag Program:I3P,
+
+-- Simple rule that just tags the current program
+tag Program:$current.program,
+
+-- Another simple rule, just tags the current desktop (a.k.a. workspace)
+tag Desktop:$desktop,
+
+-- I'd like to know what evolution folders I'm working in. But when sending a
+-- mail, the window title only contains the (not very helpful) subject. So I do
+-- not tag necessarily by the active window title, but the title that contains
+-- the folder
+current window $program == "evolution" &amp;&amp;
+any window ($program == "evolution" &amp;&amp; $title =~ /^(.*) \([0-9]+/)
+  ==&gt; tag Evo-Folder:$1,
+
+-- A general rule that works well with gvim and gnome-terminal and tells me
+-- what project I'm currently working on
+current window $title =~ m!(?:~|home/jojo)/projekte/(?:programming/(?:haskell/)?)?([^/)]*)!
+  ==&gt; tag Project:$1,
+current window $title =~ m!(?:~|home/jojo)/debian!
+  ==&gt; tag Project:Debian,
+
+-- This was a frequently looked-at pdf-File
+current window $title =~ m!output.pdf! &amp;&amp;
+any window ($title =~ /nforschung/)
+  ==&gt; tag Project:ahnenforschung,
+
+
+-- My diploma thesis is in a different directory
+current window $title =~ [ m!(?:~|home/jojo)/dokumente/Uni/DA!
+                         , m!Diplomarbeit.pdf!
+                         , m!LoopSubgroupPaper.pdf! ]
+  ==&gt; tag Project:DA,
+
+current window $title =~ m!TDM!
+  ==&gt; tag Project:TDM,
+
+( $date &gt;= 2010-08-01 &amp;&amp;
+  $date &lt;= 2010-12-01 &amp;&amp;
+  ( current window $program == "sun-awt-X11-XFramePeer" &amp;&amp;
+      current window $title == "I3P" ||
+    current window $program == "sun-awt-X11-XDialogPeer" &amp;&amp;
+      current window $title == " " &amp;&amp;
+      any window $title == "I3P" ||
+    current window $title =~ m!(?:~|home/jojo)/dokumente/Uni/SA! ||
+    current window $title =~ m!Isabelle200! ||
+    current window $title =~ m!isar-ref.pdf! ||
+    current window $title =~ m!document.pdf! ||
+    current window $title =~ m!outline.pdf! ||
+    current window $title =~ m!Studienarbeit.pdf! )
+) ==&gt; tag Project:SA,
+
+
+-- Out of curiosity: what percentage of my time am I actually coding Haskell?
+current window ($program == "gvim" &amp;&amp; $title =~ /^[^ ]+\.hs \(/ )
+  ==&gt; tag Editing-Haskell,
+
+{-
+-- Example of time-related rules. I do not use these myself.
+
+-- To be able to match on the time of day, I introduce tags for that as well.
+-- $time evaluates to local time.
+$time &gt;=  2:00 &amp;&amp; $time &lt;  8:00 ==&gt; tag time-of-day:night,
+$time &gt;=  8:00 &amp;&amp; $time &lt; 12:00 ==&gt; tag time-of-day:morning,
+$time &gt;= 12:00 &amp;&amp; $time &lt; 14:00 ==&gt; tag time-of-day:lunchtime,
+$time &gt;= 14:00 &amp;&amp; $time &lt; 18:00 ==&gt; tag time-of-day:afternoon,
+$time &gt;= 18:00 &amp;&amp; $time &lt; 22:00 ==&gt; tag time-of-day:evening,
+$time &gt;= 22:00 || $time &lt;  2:00 ==&gt; tag time-of-day:late-evening,
+
+-- This tag always refers to the last 24h
+$sampleage &lt;= 24:00 ==&gt; tag last-day,
+
+-- To categorize by calendar periods (months, weeks, or arbitrary periods),
+-- I use $date variable, and some auxiliary functions. All these functions
+-- evaluate dates in local time. Set TZ environment variable if you need
+-- statistics in a different time zone.
+
+-- You can compare dates:
+$date &gt;= 2001-01-01 ==&gt; tag this_century,
+-- You have to write them in YYYY-MM-DD format, else they will not be recognized.
+
+-- “format $date” produces a string with the date in ISO 8601 format
+-- (YYYY-MM-DD), it may be compared with strings. For example, to match
+-- everything on and after a particular date I can use
+format $date =~ /.*-03-19/  ==&gt; tag period:on_a_special_day,
+-- but note that this is a rather expensive operation and will slow down your
+-- data processing considerably.
+
+-- “day of month $date” gives the day of month (1..31),
+-- “day of week $date” gives a sequence number of the day of week
+-- (1..7, Monday is 1):
+(day of month $date == 13) &amp;&amp; (day of week $date == 5) ==&gt; tag day:friday_13,
+
+-- “month $date” gives a month number (1..12), “year $date” gives a year:
+month $date == 1 ==&gt; tag month:January,
+month $date == 2 ==&gt; tag month:February,
+year $date == 2010 ==&gt; tag year:2010,
+
+-- “$now” evaluates to the current time
+day of month $now == day of month $date ==&gt; tag current-day,
+month $now == month $date ==&gt; tag current-month,
+year $now == year $date ==&gt; tag current-year,
+-}
+</pre></div></div><br class="example-break" /></div><div class="sect2"><div class="titlepage"><div><div><h3 class="title"><a id="idp7"></a>The semantics (informal)</h3></div></div></div><p>
+      A data sample consists of the time of recording, the time passed since the
+      user’s last action, the name of the current workspace and the list of
+      windows. For each window this information is available:
+      </p><div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; "><li class="listitem">the window title</li><li class="listitem">the program name</li><li class="listitem">desktop (workspace) the window belongs to</li><li class="listitem">whether the window was the active window</li><li class="listitem">whether the window is hidden (minimized, on another desktop, unmapped, …)</li></ul></div><p>
+      Based on this information and on the rules in
+      <code class="filename">categorize.cfg</code>, the categorizer
+      (<span class="command"><strong>arbtt-stats</strong></span>) assigns <span class="emphasis"><em>tags</em></span> to
+      each sample.
+    </p><p>
+      A simple rule consists of a condition followed by an arrow
+      (<code class="literal">==&gt;</code>) and a tag expression
+      (<code class="literal">tag</code> keyword followed by tag name).
+      The rule ends with a coma (<code class="literal">,</code>).
+    </p><p>
+      The keyword <code class="literal">tag</code>, usually preceded with a condition,
+      assigns a <span class="emphasis"><em>tag</em></span> to the sample; <code class="literal">tag</code>
+      keyword is followed by a tag name (any sequence of alphanumeric symbols,
+      underscores and hyphens). If tag name contains a colon
+      (<code class="literal">:</code>), the first part of the name before the colon, is
+      considered to be tag <span class="emphasis"><em>category</em></span>.
+    </p><p>
+      For example, this rule
+      </p><pre class="programlisting">month $date == 1 ==&gt; tag month:January,</pre><p>
+      if it succeeds, assigns a the tag <code class="literal">January</code> in the
+      category <code class="literal">month</code>.
+    </p><p>If the tag has a <span class="emphasis"><em>category</em></span>, it will only be
+      assigned if no other tag of that category has been assigned. This means
+      that for each sample and each category, there can be at most only one tag
+      in that category. Tags can contain references to group matches in the
+      regular expressions used in conditions (<code class="literal">$1</code>,
+      <code class="literal">$2</code>)...). Tags can also reference some
+      variables such as window title (<code class="literal">$current.title</code>) or
+      program name (<code class="literal">$current.program</code>).
+    </p><p>
+      The variable <code class="literal">$idle</code> contains the idle time of the user,
+      measured in seconds. Usually, it is used to assign the tag
+      <code class="literal">inactive</code>, which is handled specially by
+      <span class="command"><strong>arbtt-stats</strong></span>, as can be seen in <a class="xref" href="configuration.html#catex" title="Example 1. categorize.cfg">Example 1, “<code class="filename">categorize.cfg</code>”</a>.
+    </p><p>
+      When applying the rules, the categorizer has a notion of
+      the <span class="emphasis"><em>window in scope</em></span>, and the variables
+      <code class="literal">$title</code>, <code class="literal">$program</code>,
+      <code class="literal">$wdesktop</code>, <code class="literal">$active</code> and
+      <code class="literal">$hidden</code> always refer to the window in scope.
+      By default, there is no window is in scope. Condition should be prefixed
+      with either <code class="literal">current window</code> or <code class="literal">any
+      window</code>, to define scope of these variables.
+    </p><p>
+      The name of the current desktop (or workspace) is available as
+      <code class="literal">$desktop</code>.
+    </p><p>
+      For <code class="literal">current window</code>, the currently active window is in
+      scope. If there is no such window, the condition is false.
+    </p><p>
+      For <code class="literal">any window</code>, the condition is applied to each
+      window, in turn, and if any of the windows matches, the result is true. If
+      more than one window matches it is not defined from which match the
+      variables <code class="literal">$1</code>... are taken from (see more about regular
+      expressions below).
+    </p><p>
+      The variable <code class="literal">$time</code> refers to the time-of-day of the
+      sample (i.e. the time since 00:00 that day, local time), while
+      <code class="literal">$sampleage</code> refers to the
+      time span from when the sample was recored until now, the time of
+      evaluating the statistics. The latter variable is especially useful when
+      passed to the <code class="option">--filter</code> option of
+      <span class="command"><strong>arbtt-stats</strong></span>. They can be compared with expressions
+      like "hh:mm", for example
+      </p><pre class="programlisting">$time &gt;=  8:00 &amp;&amp; $time &lt; 12:00 ==&gt; tag time-of-day:morning</pre><p>
+    </p><p>
+      The variable <code class="literal">$date</code> refers to the date and time of the
+      recorded sample. It can be compared with date literals in the form
+      YYYY-MM-DD (which stand for midnight, so </p><pre class="programlisting">$date ==
+      2001-01-01</pre><p> will not do what you want, but
+      </p><pre class="programlisting">$date &gt;= 2001-01-01 &amp;&amp; $date &lt;= 2001-01-02</pre><p>
+      would).  All dates are evaluated in local time.
+    </p><p>
+      Expression <code class="literal">format $date</code> evaluates to a string with
+      a date formatted according to ISO 8601, i.e. like "YYYY-MM-DD". The 19th
+      of March 2010 is formatted as "2010-03-19". Formatted date can be compared
+      to strings. Formatted dates may be useful to tag particular date ranges. But
+      also note that this is a rather expensive operation that can slow down your
+      data processing.
+    </p><p>
+      Expression <code class="literal">month $date</code> evaluates to an integer, from 1
+      to 12, corresponding to the month number. Expression <code class="literal">year
+      $date</code> evaluates to an integer which is a year number.
+      Expression <code class="literal">day of month $date</code> evaluates to an integer,
+      from 1 to 31, corresponding to the day of month.
+      Expression <code class="literal">day of week $date</code> evaluates to an integer,
+      from 1 to 7, corresponding to the day of week, Monday is 1, Sunday is 7.
+      These expressions can be compared to integers.
+    </p><p>
+      Expressions can be compared to literal values with <code class="literal">==</code>
+      (equal), <code class="literal">/=</code> (not equal), <code class="literal">&lt;</code>,
+      <code class="literal">&lt;=</code>, <code class="literal">&gt;=</code>,
+      <code class="literal">&gt;</code> operators. String expressions
+      (<code class="literal">$program</code>, <code class="literal">$title</code>) can be matched
+      against regular expressions with <code class="literal">=~</code> operator. With these
+      operators, the right hand side can be a comma-separated list of
+      literals enclosed in square brackets (<code class="literal">[</code>
+      <span class="emphasis"><em>...</em></span>, <span class="emphasis"><em>...</em></span>, <code class="literal">]</code>), which
+      succeeds if any of them succeeds.
+    </p><p>Regular expressions are written either between slashes
+       (<code class="literal">/</code> regular expression <code class="literal">/</code>),
+       or after a letter <code class="literal">m</code> followed by any symbol
+       (<code class="literal">m</code> <span class="emphasis"><em>c</em></span> regular expression <span class="emphasis"><em>c</em></span>, where <span class="emphasis"><em>c</em></span> is any symbol).
+       The second appearance of that symbol ends the expression.
+       You can find both variants in <a class="xref" href="configuration.html#catex" title="Example 1. categorize.cfg">Example 1, “<code class="filename">categorize.cfg</code>”</a>.
+    </p><p>Complex conditions may be constructed from the simpler ones,
+      using Boolean AND (<code class="literal">&amp;&amp;</code>), OR
+      (<code class="literal">||</code>), and NOT (<code class="literal">!</code>) functions and
+      parentheses.
+    </p><p>
+      You can define short-hand names for conditions using
+      <code class="literal">condition</code>:
+      </p><pre class="programlisting">
+        condition arbtt = current window $title =~ m/arbtt/ in {
+          $arbtt &amp;&amp; $time &lt; 14:00 ==&gt; tag arbtt-morning,
+          $arbtt &amp;&amp; $time &gt; 14:00 ==&gt; tag arbtt-afternoon
+        }
+      </pre><p>
+      Everything that is a valid condition is assignable and you can
+      reference bound variables in rules by prefixing them with a
+      dollar (<code class="literal">$</code>).
+    </p></div><div class="sect2"><div class="titlepage"><div><div><h3 class="title"><a id="idp8"></a>The syntax</h3></div></div></div><p>
+    <code class="filename">categorize.cfg</code> is a plain text file.
+    Whitespace is insignificant and Haskell-style comments are allowed.
+    A formal grammar is provided in <a class="xref" href="configuration.html#grammar" title="Figure 1. The formal grammar of categorize.cfg">Figure 1, “The formal grammar of <code class="filename">categorize.cfg</code>”</a>.
+    </p><div class="figure"><a id="grammar"></a><p class="title"><strong>Figure 1. The formal grammar of <code class="filename">categorize.cfg</code></strong></p><div class="figure-contents"><table width="100%" cellpadding="5" bgcolor="#F5DCB3" border="1" class="productionset" summary="EBNF"><tr><td><table border="0" width="99%" cellpadding="0" bgcolor="#F5DCB3" class="productionset" summary="EBNF productions"><tr><td align="left" valign="top" width="3%">[1]</td><td align="right" valign="top" width="10%"><a id="g-rules"></a>Rules</td><td valign="top" width="5%" align="center"><code>::=</code></td><td valign="top" width="52%">
+          [ <a href="configuration.html#g-aliasspec">AliasSpec</a> ]
+          <a href="configuration.html#g-rule">Rule</a> ( (<span class="quote">“<span class="quote">,</span>”</span>
+          <a href="configuration.html#g-rule">Rule</a>)* | ( <span class="quote">“<span class="quote">;</span>”</span>
+          <a href="configuration.html#g-rule">Rule</a>)* )
+        </td><td align="left" valign="top" width="30%"> </td></tr><tr><td align="left" valign="top" width="3%">[2]</td><td align="right" valign="top" width="10%"><a id="g-aliasspec"></a>AliasSpec</td><td valign="top" width="5%" align="center"><code>::=</code></td><td valign="top" width="52%"><span class="quote">“<span class="quote">aliases</span>”</span> <span class="quote">“<span class="quote">(</span>”</span> <a href="configuration.html#g-alias">Alias</a> (<span class="quote">“<span class="quote">,</span>”</span> <a href="configuration.html#g-alias">Alias</a>)*
+              <span class="quote">“<span class="quote">)</span>”</span> </td><td align="left" valign="top" width="30%"> </td></tr><tr><td align="left" valign="top" width="3%">[3]</td><td align="right" valign="top" width="10%"><a id="g-alias"></a>Alias</td><td valign="top" width="5%" align="center"><code>::=</code></td><td valign="top" width="52%">Literal <span class="quote">“<span class="quote">-&gt;</span>”</span> Literal</td><td align="left" valign="top" width="30%"> </td></tr><tr><td align="left" valign="top" width="3%">[4]</td><td align="right" valign="top" width="10%"><a id="g-rule"></a>Rule</td><td valign="top" width="5%" align="center"><code>::=</code></td><td valign="top" width="52%"><span class="quote">“<span class="quote">{</span>”</span> <a href="configuration.html#g-rules">Rules</a>
+                 <span class="quote">“<span class="quote">}</span>”</span>
+             |<br />
+              <a href="configuration.html#g-cond">Cond</a> <span class="quote">“<span class="quote">==&gt;</span>”</span>
+              <a href="configuration.html#g-rule">Rule</a> | <span class="quote">“<span class="quote">if</span>”</span>
+              <a href="configuration.html#g-cond">Cond</a> <span class="quote">“<span class="quote">then</span>”</span>
+              <a href="configuration.html#g-rule">Rule</a> <span class="quote">“<span class="quote">else</span>”</span>
+              <a href="configuration.html#g-rule">Rule</a>
+             |<br />
+              <span class="quote">“<span class="quote">tag</span>”</span> <a href="configuration.html#g-tag">Tag</a>
+             |<br /><a href="configuration.html#g-condition">ConditionBinding</a></td><td align="left" valign="top" width="30%"> </td></tr><tr><td align="left" valign="top" width="3%">[5]</td><td align="right" valign="top" width="10%"><a id="g-cond"></a>Cond</td><td valign="top" width="5%" align="center"><code>::=</code></td><td valign="top" width="52%"><span class="quote">“<span class="quote">(</span>”</span> <a href="configuration.html#g-cond">Cond</a>
+                 <span class="quote">“<span class="quote">)</span>”</span>
+             |<br /><span class="quote">“<span class="quote">!</span>”</span> <a href="configuration.html#g-cond">Cond</a> |
+                 <a href="configuration.html#g-cond">Cond</a> <span class="quote">“<span class="quote">&amp;&amp;</span>”</span>
+                 <a href="configuration.html#g-cond">Cond</a> |
+                 <a href="configuration.html#g-cond">Cond</a> <span class="quote">“<span class="quote">||</span>”</span> <a href="configuration.html#g-cond">Cond</a>
+             |<br /> <span class="quote">“<span class="quote">$active</span>”</span>  |<br /> <span class="quote">“<span class="quote">$hidden</span>”</span>  |<br /> <a href="configuration.html#g-string">String</a> <a href="configuration.html#g-cmpop">CmpOp</a>
+         <a href="configuration.html#g-string">String</a>  |<br /> <a href="configuration.html#g-string">String</a> <a href="configuration.html#g-cmpop">CmpOp</a>
+         <span class="quote">“<span class="quote">[</span>”</span> <a href="configuration.html#g-listofstring">
+        ListOfString</a>
+                 <span class="quote">“<span class="quote">]</span>”</span>
+                  |<br /> <a href="configuration.html#g-string">String</a> <span class="quote">“<span class="quote">=~</span>”</span>
+             <a href="configuration.html#g-regex">RegEx</a> |<br /> <a href="configuration.html#g-string">String</a> <span class="quote">“<span class="quote">=~</span>”</span>
+         <span class="quote">“<span class="quote">[</span>”</span> <a href="configuration.html#g-listofregex">ListOfRegex</a>
+                 <span class="quote">“<span class="quote">]</span>”</span>
+                  |<br /> <a href="configuration.html#g-number">Number</a> <a href="configuration.html#g-cmpop">CmpOp</a>
+         <a href="configuration.html#g-number">Number</a>  |<br /> <a href="configuration.html#g-timediff">TimeDiff</a> <a href="configuration.html#g-cmpop">CmpOp</a>
+         <a href="configuration.html#g-timediff">TimeDiff</a>  |<br /> <a href="configuration.html#g-date">Date</a> <a href="configuration.html#g-cmpop">CmpOp</a>
+         <a href="configuration.html#g-date">Date</a>  |<br /> <span class="quote">“<span class="quote">current window</span>”</span> <a href="configuration.html#g-cond">Cond</a>  |<br /> <span class="quote">“<span class="quote">any window</span>”</span> <a href="configuration.html#g-cond">Cond</a>  |<br /> <span class="quote">“<span class="quote">$</span>”</span> Literal </td><td align="left" valign="top" width="30%"> </td></tr><tr><td align="left" valign="top" width="3%">[6]</td><td align="right" valign="top" width="10%"><a id="g-string"></a>String</td><td valign="top" width="5%" align="center"><code>::=</code></td><td valign="top" width="52%"> <span class="quote">“<span class="quote">$title</span>”</span>  |<br /> <span class="quote">“<span class="quote">$program</span>”</span>  |<br /> <span class="quote">“<span class="quote">$wdesktop</span>”</span>  |<br /> <span class="quote">“<span class="quote">$desktop</span>”</span>  |<br /> <span class="quote">“<span class="quote">format</span>”</span> <a href="configuration.html#g-date">Date</a>  |<br /> <span class="quote">“<span class="quote">"</span>”</span> string literal <span class="quote">“<span class="quote">"</span>”</span> </td><td align="left" valign="top" width="30%"> </td></tr><tr><td align="left" valign="top" width="3%">[7]</td><td align="right" valign="top" width="10%"><a id="g-listofstring"></a>
+        ListOfString</td><td valign="top" width="5%" align="center"><code>::=</code></td><td valign="top" width="52%"> <span class="quote">“<span class="quote">"</span>”</span> string literal <span class="quote">“<span class="quote">"</span>”</span>  |<br /> <span class="quote">“<span class="quote">"</span>”</span> string literal <span class="quote">“<span class="quote">"</span>”</span> , <a href="configuration.html#g-listofstring">
+        ListOfString</a> </td><td align="left" valign="top" width="30%"> </td></tr><tr><td align="left" valign="top" width="3%">[8]</td><td align="right" valign="top" width="10%"><a id="g-number"></a>Number</td><td valign="top" width="5%" align="center"><code>::=</code></td><td valign="top" width="52%"> <span class="quote">“<span class="quote">$idle</span>”</span>  |<br /> <span class="quote">“<span class="quote">day of week</span>”</span> <a href="configuration.html#g-date">Date</a>  |<br /> <span class="quote">“<span class="quote">day of month</span>”</span> <a href="configuration.html#g-date">Date</a>  |<br /> <span class="quote">“<span class="quote">month</span>”</span> <a href="configuration.html#g-date">Date</a>  |<br /> <span class="quote">“<span class="quote">year</span>”</span> <a href="configuration.html#g-date">Date</a>  |<br /> number literal </td><td align="left" valign="top" width="30%"> </td></tr><tr><td align="left" valign="top" width="3%">[9]</td><td align="right" valign="top" width="10%"><a id="g-date"></a>Date</td><td valign="top" width="5%" align="center"><code>::=</code></td><td valign="top" width="52%"> <span class="quote">“<span class="quote">$date</span>”</span>  |<br /> <span class="quote">“<span class="quote">$now</span>”</span> </td><td align="left" valign="top" width="30%"> </td></tr><tr><td align="left" valign="top" width="3%">[10]</td><td align="right" valign="top" width="10%"><a id="g-timediff"></a>TimeDiff</td><td valign="top" width="5%" align="center"><code>::=</code></td><td valign="top" width="52%"> <span class="quote">“<span class="quote">$time</span>”</span>  |<br /> <span class="quote">“<span class="quote">$sampleage</span>”</span>  |<br />( Digit )* Digit <span class="quote">“<span class="quote">:</span>”</span> Digit Digit</td><td align="left" valign="top" width="30%"> </td></tr><tr><td align="left" valign="top" width="3%">[11]</td><td align="right" valign="top" width="10%"><a id="g-tag"></a>Tag</td><td valign="top" width="5%" align="center"><code>::=</code></td><td valign="top" width="52%"> [ Literal <span class="quote">“<span class="quote">:</span>”</span> ] Literal </td><td align="left" valign="top" width="30%"> </td></tr><tr><td align="left" valign="top" width="3%">[12]</td><td align="right" valign="top" width="10%"><a id="g-regex"></a>RegEx</td><td valign="top" width="5%" align="center"><code>::=</code></td><td valign="top" width="52%">  <span class="quote">“<span class="quote">/</span>”</span> Literal <span class="quote">“<span class="quote">/</span>”</span> |
+              <span class="quote">“<span class="quote">m</span>”</span> <em class="replaceable"><code>c</code></em> Literal
+              <em class="replaceable"><code>c</code></em> </td><td align="left" valign="top" width="30%">/* Where
+              <em class="replaceable"><code>c</code></em> can be any
+              character. */<br /></td></tr><tr><td align="left" valign="top" width="3%">[13]</td><td align="right" valign="top" width="10%"><a id="g-listofregex"></a>ListOfRegex</td><td valign="top" width="5%" align="center"><code>::=</code></td><td valign="top" width="52%"> <span class="quote">“<span class="quote">"</span>”</span> <a href="configuration.html#g-regex">RegEx</a> <span class="quote">“<span class="quote">"</span>”</span>  |<br /> <span class="quote">“<span class="quote">"</span>”</span> <a href="configuration.html#g-regex">RegEx</a> <span class="quote">“<span class="quote">"</span>”</span> , <a href="configuration.html#g-listofregex">ListOfRegex</a> </td><td align="left" valign="top" width="30%"> </td></tr><tr><td align="left" valign="top" width="3%">[14]</td><td align="right" valign="top" width="10%"><a id="g-cmpop"></a>CmpOp</td><td valign="top" width="5%" align="center"><code>::=</code></td><td valign="top" width="52%"><span class="quote">“<span class="quote">&lt;=</span>”</span> | <span class="quote">“<span class="quote">&lt;</span>”</span> |
+        <span class="quote">“<span class="quote">==</span>”</span> | <span class="quote">“<span class="quote">!=</span>”</span>
+        | <span class="quote">“<span class="quote">&gt;</span>”</span> | <span class="quote">“<span class="quote">&gt;=</span>”</span></td><td align="left" valign="top" width="30%"> </td></tr><tr><td align="left" valign="top" width="3%">[15]</td><td align="right" valign="top" width="10%"><a id="g-condition"></a>ConditionBinding</td><td valign="top" width="5%" align="center"><code>::=</code></td><td valign="top" width="52%"><span class="quote">“<span class="quote">condition</span>”</span> Literal <span class="quote">“<span class="quote">=</span>”</span> <a href="configuration.html#g-cond">Cond</a> <span class="quote">“<span class="quote">in</span>”</span> <a href="configuration.html#g-rule">Rule</a></td><td align="left" valign="top" width="30%"> </td></tr></table></td></tr></table></div></div><br class="figure-break" /><p>
+        A <code class="literal">String</code> refers to a double-quoted string of
+        characters, while a <code class="literal">Literal</code> is not quoted.
+        <a href="configuration.html#g-tag">Tags</a> may only consist of
+        letters, dashes and underscores, or variable interpolations. A Tag maybe
+        be optionally prepended with a category, separated by a colon. The
+        category itself follows he same lexical rules as the tag. A variable
+        interpolation can be one of the following:
+        </p><div class="variablelist"><dl class="variablelist"><dt><span class="term"><code class="literal">$1</code>, <code class="literal">$2</code>,...</span></dt><dd> will be replaced by the respective group in the last
+              successfully applied regular expression in the conditions enclosing the
+              current rule.
+            </dd><dt><span class="term"><code class="literal">$current.title</code>, </span><span class="term"><code class="literal">$current.program</code></span></dt><dd> will be replaced by title the currently active
+              window, resp. by the name of the currently active program.
+              If no window happens to be active, this tag will be ignored.
+            </dd></dl></div><p>
+      </p><p>
+        A regular expression is, like in perl, either enclosed in forward
+        slashes or, alternatively, in any character of your choice with an
+        <code class="literal">m</code> (for <span class="quote">“<span class="quote">match</span>”</span>) in front. This is handy if you need
+        to use regular expressions that match directory names. Otherwise, the
+        syntax of the regular expressions is that of perl-compatible regular
+        expressions.
+      </p></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="index.html">Prev</a> </td><td width="20%" align="center"> </td><td width="40%" align="right"> <a accesskey="n" href="effective-use.html">Next</a></td></tr><tr><td width="40%" align="left" valign="top">arbtt – The Automatic Rule-Base Time Tracker </td><td width="20%" align="center"><a accesskey="h" href="index.html">Home</a></td><td width="40%" align="right" valign="top"> Effective Use of Arbtt</td></tr></table></div></body></html>

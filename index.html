@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>arbtt: the automatic, rule-based time tracker</title>
+    <link rel="stylesheet" href="arbtt.css">
+</head>
+
+<body>
+    <div id="wrapper">
+        <nav>
+            <h1 class="title">arbtt</h1>
+            <p class="title"><b>a</b>utomatic, <b>r</b>ule-<b>b</b>ased <b>t</b>ime <b>t</b>racker</p>
+            <ul>
+                <li><a href="#what">What is it?</a></li>
+                <li><a href="#how">How does it work?</a></li>
+                <li><a href="#install">Installation</a></li>
+                <li><a href="doc/users_guide/index.html">→ Documentation</a></li>
+                <li><a href="https://github.com/nomeata/arbtt/issues">→ Bugs and issues</a></li>
+                <li><a href="#contact">Get in touch</a></li>
+            </ul>
+        </nav>
+        <div id="content">
+            <section id="what">
+                <h2>What is arbtt?</h2>
+                <p><b>arbtt</b> is a cross-platform, completely automatic time tracker.</p>
+                <p>There are lots of time-tracking programs out there that allow you to
+                collect statistics about how you spend your time,
+                which activities are your biggest time-wasters, and so on.
+                However, most of them require explicit action on your part:
+                you have to manually enter what activity or project you're working on,
+                and that has several disadvantages:
+
+                </p><ul>
+                    <li>You need to stop what you're doing to insert the meta-information, and that breaks your concentration;</li>
+                    <li>If you are lazy or get annoyed and don't keep updating it, the statistics will be useless</li>
+                    <li>You won't be able to catch a little thing like quickly answering an e-mail or looking for the weather report.</li>
+                </ul>
+
+                <p><b>arbtt</b>, on the other hand, is a time tracker that <i>gets out of the way</i>.
+                Its core component (<code>arbtt-capture</code>) silently captures data
+                about what you are doing, completely autonomously.
+                No interaction required, no distraction possible.
+                This information is continuously stored in a log file.
+                A separate tool (<code>arbtt-stats</code>) the allows you to investigate this data,
+                at whatever time is convenient to you, by using simple text-based rules.</p>
+
+                <p>One big advantage of this approach is that you do not need to know in advance
+                what queries you are interested in.
+                Since the rules are applied in real-time when you are evaluating your data,
+                and not when recording it, your raw data is always intact, and
+                you can add more rules and forgotten special cases later.</p>
+
+                <blockquote><i> Keep in mind that the log file might contain
+                very sensitive private data. Make sure you protect it well.<br>
+                You can get rid of all logs by deleting
+                <code>~/.arbtt/capture.log</code></i>.</blockquote>
+            </section>
+
+            <section id="how">
+                <h2>How does it work?</h2>
+
+                <p><code>arbtt-capture</code> is a desktop daemon that runs in the background
+                and keeps a continuous log of your activity,
+                by storing at regular intervals which windows are open,
+                which one has the focus and how long it has been since your last action.</p>
+
+                <p>From this log, a wealth of statistics can be derived.
+                Here's where the "rule-based" part of the name comes along:
+                arbtt comes with a built-in command-line statistics generator (<code>arbtt-stats</code>)
+                that will, based on very simple but powerful rules you can customize,
+                sift through the raw data and reveal patterns and relevant information.
+                </p>
+                <p>The rules are specified in a simple text-based format, on a file called
+                "categorize.cfg". Here's an example of a simple categorize.cfg file:
+                </p><pre>
+--Convert program executable names to recognizable names
+aliases (
+  "Navigator"         -&gt; "Firefox",
+  "evince"            -&gt; "PDF reader",
+  "gedit"             -&gt; "Text editor",
+  "totem"             -&gt; "Video player",
+)
+
+{
+--Mark any samples captured after 5 minutes of inactivity with the "inactive" tag
+$idle &gt; 300                     ==&gt; tag inactive,
+
+--Tag each program with its executable name (filtered by the aliases above)
+                                    tag Program:$current.program,
+
+--Tag each program with its window title (filtered by the aliases above)
+                                    tag Title:$current.title,
+
+$time &gt;=  8:00 &amp;&amp; $time &lt; 12:00 ==&gt; tag time-of-day:morning,
+$time &gt;= 14:00 &amp;&amp; $time &lt; 18:00 ==&gt; tag time-of-day:afternoon,
+}</pre>
+
+                <p>And here's the corresponding output of <code>arbtt-stats -c "Program"</code>:</p>
+                <pre>
+Statistics for category "Program"
+=================================
+__________________Tag_|_________Time_|_Percentage_
+      Program:Firefox |  8d06h20m00s |      49.01
+Program:Google Chrome |  3d15h24m00s |      21.60
+  Program:Text editor |  1d04h04m00s |       6.94
+        Program:Skype |    13h55m00s |       3.44
+     Program:Terminal |     9h22m00s |       2.31
+   Program:PDF reader |     6h10m00s |       1.52
+      Program:Desktop |     5h13m00s |       1.29
+ Program:File browser |     4h11m00s |       1.03
+ (53 entries omitted) |    22h59m00s |       5.68</pre>
+
+            </section>
+
+            <section id="install">
+                <h2>Install arbtt</h2>
+                <ul class="installation">
+                  <h3>Binary installations</h3>
+                    <li>
+                        <b>Debian/Ubuntu:</b>
+                        <p>arbtt is available both in
+                        <a href="http://packages.debian.org/sid/arbtt">Debian's</a> and
+                        <a href="http://packages.ubuntu.com/raring/arbtt">Ubuntu's</a> repositories.</p>
+                        <p>Install arbtt:</p>
+                        <code class="command">sudo apt-get install arbtt</code>
+                        <p>Set it up to start automatically on system startup:</p>
+                        <code class="command">cp /usr/share/doc/arbtt/examples/arbtt-capture.desktop ~/.config/autostart/</code>
+                        <p>Start the daemon manually, if you want it to start capturing immediately,
+                        rather than at the next system restart:</p>
+                        <code class="command">(arbtt-capture &amp;)</code>
+                        <p>Create a minimal categorize.cfg file to allow arbtt-stats to be invoked without errors:</p>
+                        <code class="command">echo "{\$idle &gt; 60 ==&gt; tag inactive}" &gt; ~/.arbtt/categorize.cfg</code>
+                    </li>
+                    <li>
+                        <b>Windows:</b><br>Download the
+                        latest <a href="http://www.joachim-breitner.de/archive/arbtt/">arbtt-setup.exe</a>
+                        and follow the setup process as usual. This will set up the capturing daemon,
+                        but note that there is no graphical interface. Extracting stats from the data
+                        requires running arbtt-stats on the command line. Run
+                        <code>arbtt-stats --help</code> for a quick reference;
+                        for more detailed information, consult the
+                        <a href="doc/users_guide/arbtt-stats.html">manual</a>.
+                    </li>
+                    <h3>Source installations</h3>
+
+                      <p>arbtt can be installed from source either via cabal install or from the source repository.</p>
+                      <b>Dependencies:</b>
+                      <p>arbtt depends on several libraries whose development versions (name often suffixed <code>-dev</code>) must be available or the compilation
+                        may fail with errors such as <code>X11-1.6.1.2 failed during the configure step</code>;
+                        these libraries include:
+                        <ul>
+                          <li>X11, for the X11 Haskell binding (possibly named <code>libx11-dev</code> or <code>xorg-dev</code> in your package manager)</li>
+                          <li>PCRE3, for pcre-light (possibly <code>libpcre3-dev</code>)</li>
+                          <li>XSS, for arbtt (possibly <code>libxss-dev</code>)</li>
+                        </ul>
+                      </p>
+                    <li>
+                      <b>From Hackage:</b>
+                      <p>arbtt has been <a href="http://hackage.haskell.org/package/arbtt">published on hackage</a>,
+                        the Haskell package database. If you have
+                        <a href="http://www.haskell.org/haskellwiki/Cabal-Install">cabal-install</a>
+                        available, you can install arbtt by simply running:</p>
+                        <code class="command">cabal install arbtt</code>
+                    </li>
+
+                    <li>
+                        <b>Build from repo:</b>
+                        <p>Download the latest release from <a href="http://www.joachim-breitner.de/archive/arbtt/">the archive</a>.
+                        Extract the tarball and run the following commands to build and install the arbtt binaries:</p>
+                        <code class="command">runhaskell Setup.hs configure</code><br>
+                        <code class="command">runhaskell Setup.hs build</code><br>
+                        <code class="command">runhaskell Setup.hs install</code><br>
+                        <p>If you use GNOME or KDE, you can copy the file "arbtt-capture.desktop"
+                        to ~/.config/autostart/. If you didn't do a system-wide installation,
+                        you'll probably need to put the full path to arbtt-capture
+                        in the Exec line of the .desktop file.</p>
+                    </li>
+
+                    <li>
+                        <b>Mac OS X support:</b>
+                        <p>arbtt can run on Mac OS X systems. To compile it, you need to install the pkgconfig and pcre source packages
+                        using <a href="http://brew.sh">Homebrew</a> or <a href="https://www.macports.org">MacPorts</a>. For Homebrew, you can execute:</p>
+                        <code class="command">brew install pkgconfig</code><br>
+                        <code class="command">brew install pcre</code><br>
+                        <p>or for MacPorts:</p>
+                        <code class="command">sudo port install pkgconfig</code><br>
+                        <code class="command">sudo port install pcre</code><br>
+                        <p>Then, you can compile arbtt using the usual cabal commands.</p>
+                        <p>If you use MacPorts and have a linking error, it may be because of a conflict between the system libiconv and the MacPorts libiconv.
+                        Execute the following cabal command to resolve the conflict:</p>
+                        <code class="command">cabal configure --extra-lib-dir=/usr/lib</code><br>
+                        <p>When the installation is done, your arbtt binaries will be located in <code>~/Library/Haskell/bin</code> or <code>~/.cabal/bin</code>.</p>
+                    </li>
+                </ul>
+            </section>
+
+            <section id="contact">
+                <h2>Get in touch</h2>
+
+                <h3>Issue tracker</h3>
+                    <p>
+In addition to the mailing list, we use the <a href="https://github.com/nomeata/arbtt/issues">issue tracker of the GitHub repository</a>.
+                    </p>
+
+                <h3>Developement repository</h3>
+<p>The source code is written in <a href="https://haskell.org">Haskell</a>,
+<a href="https://github.com/nomeata/arbtt/">hosted on GitHub</a>.
+</p>
+
+                <h3>History and credits</h3>
+<p>Arbtt was created in 2009 by <a href="http://www.joachim-breitner.de/">Joachim Breitner</a>. This webpage was designed by Waldir Pimenta in 2013. The background image is <a href="http://commons.wikimedia.org/wiki/File:Revolutionstaschenuhr.jpg">Revolutionstaschenuhr</a> by Onnahfarg; CC-BY</p>.
+            </section>
+        </div>
+    </div>
+    <script src="arbtt.js"></script>
+</body>
+</html>

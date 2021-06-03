@@ -1,0 +1,408 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Effective Use of Arbtt</title><link rel="stylesheet" type="text/css" href="fptools.css" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="home" href="index.html" title="arbtt – The Automatic Rule-Base Time Tracker" /><link rel="up" href="index.html" title="arbtt – The Automatic Rule-Base Time Tracker" /><link rel="prev" href="configuration.html" title="Configuring the arbtt categorizer (arbtt-stats)" /><link rel="next" href="contributed.html" title="Contributed tools" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">Effective Use of Arbtt</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="configuration.html">Prev</a> </td><th width="60%" align="center"> </th><td width="20%" align="right"> <a accesskey="n" href="contributed.html">Next</a></td></tr></table><hr /></div><div class="sect1"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a id="effective-use"></a>Effective Use of Arbtt</h2></div></div></div><p>
+    Now that the syntax has been described and the toolbox laid out,
+    how do you practically go about using and configuring arbtt?
+  </p><div class="sect2"><div class="titlepage"><div><div><h3 class="title"><a id="idp9"></a>Enabling data collection</h3></div></div></div><p>
+      After installing arbtt, you need to configure it to run. There
+      are many ways you can run the <code class="literal">arbtt-capture</code>
+      daemon. One standard way is to include the command
+      </p><pre class="programlisting">
+arbtt-capture &amp;
+      </pre><p>
+      in your desktop environments startup script, e.g.
+      <code class="filename">~/.xinitrc</code> or similar.
+    </p><p>
+      Another trick is add it as a <a class="ulink" href="https://en.wikipedia.org/wiki/Cron" target="_top"><code class="literal">cron</code></a>
+      job. To do so, edit your crontab file (<code class="literal">crontab -e</code>) and
+      add a line like this:
+    </p><pre class="programlisting">
+DISPLAY=:0
+@reboot arbtt-capture --logfile=/home/username/doc/arbtt/capture.log
+</pre><p>
+      At boot, <code class="literal">arbtt-capture</code> will be run in the
+      background and will capture a snapshot of the X metadata for
+      active windows every 60 seconds (the default). If you want more
+      fine-grained time data at the expense of doubling storage use,
+      you could increase the sampling rate with an option like
+      <code class="literal">--sample-rate=30</code>. To be resilient to any errors
+      or segfaults, you could also wrap it in an infinite loop to restart
+      the daemon should it ever crash, with a command like
+    </p><pre class="programlisting">
+DISPLAY=:0
+@reboot while true; do arbtt-capture --sample-rate=30; sleep 1m; done
+</pre></div><div class="sect2"><div class="titlepage"><div><div><h3 class="title"><a id="idp12"></a>Checking data availability</h3></div></div></div><p>
+      arbtt tracks <a class="ulink" href="https://en.wikipedia.org/wiki/X_Window_System_protocols_and_architecture#Attributes_and_properties" target="_top">X</a> properties like window title, class, and running
+      program, and you write rules to classify those strings as
+      you wish; but this assumes that the necessary data is present in
+      those properties.
+    </p><p>
+      For some programs, this is the case. For example, web browsers
+      like Firefox typically set the X title to the
+      HTML <code class="literal">&lt;title&gt;</code> element of the web page in the
+      currently-focused tab, which is enough for classification.
+    </p><p>
+      Some programs have title-setting available as plugins. The IRC client <a class="ulink" href="http://www.irssi.org/" target="_top">irssi</a>
+      in a GNU screen or X terminal usually sets the title to just "<code class="literal">irssi</code>",
+      which blocks more accurate time-classification based on IRC channel (one channel may be for
+      recreation, another for programming, and yet another for work), but can be easily configured
+      to set the title using the extension
+      <a class="ulink" href="http://scripts.irssi.org/scripts/title.pl" target="_top"><code class="literal">title.pl</code></a>.
+    </p><p>
+      Some programs do not set titles or class, and all arbtt sees is
+      empty strings like <code class="literal">""</code>; or they may set the title/class
+      to a constant like <code class="literal">"Liferea"</code>, which may be acceptable if
+      that program is used for only one purpose, but if it is used for
+      many purposes, then you cannot write a rule matching it without
+      producing highly-misleading time analyses. (For example, a web
+      browser may be used for countless purposes, ranging from work to
+      research to music to writing to programming; but if the web
+      browser's title/class were always just <code class="literal">"Web browser"</code>,
+      how would you classify 5 hours spent using the web browser? If the
+      5 hours are classified as any or all of those purposes, then the
+      results will be misleading garbage - you probably did not spend 5
+      hours just listening to music, but a mixture of those purposes,
+      which changes from day to day.)
+    </p><p>
+      You should check for such problematic programs upon starting using
+      arbtt. It would be unfortunate if you were to log for a few
+      months, go back for a detailed report for some reason, and
+      discover that the necessary data was never available for
+      arbtt to log!
+    </p><p>
+      These programs can sometimes be customized internally, a bug
+      report filed with the maintainers, or their titles can be
+      externally set by
+      <a class="ulink" href="https://en.wikipedia.org/wiki/Wmctrl" target="_top"><code class="literal">wmctrl</code></a>
+      or
+      <a class="ulink" href="http://jonisalonen.com/2014/setting-x11-window-properties-with-xprop/" target="_top"><code class="literal">xprop</code></a>.
+    </p><div class="sect3"><div class="titlepage"><div><div><h4 class="title"><a id="idp10"></a><code class="literal">xprop</code></h4></div></div></div><p>
+        You can check the X properties of a running window by running
+        the command
+        <a class="ulink" href="http://www.xfree86.org/current/xprop.1.html" target="_top"><code class="literal">xprop</code></a>
+        and clicking on the window; <code class="literal">xprop</code> will print
+        out all the relevant X information. For example, the output for
+        Emacs might look like this
+      </p><pre class="programlisting">
+$ xprop | tail -5
+WM_CLASS(STRING) = "emacs", "Emacs"
+WM_ICON_NAME(STRING) = "emacs@elan"
+_NET_WM_ICON_NAME(UTF8_STRING) = "emacs@elan"
+WM_NAME(STRING) = "emacs@elan"
+_NET_WM_NAME(UTF8_STRING) = "emacs@elan"
+</pre><p>
+        This is not very helpful: it does not tell us the filename being
+        edited, the mode being used, or anything. You could classify
+        time spent in Emacs as "programming" or
+        "writing", but this would be imperfect, especially if
+        you do both activities regularly. However, Emacs can be
+        customized by editing <code class="literal">~/.emacs</code>, and after
+        some searching with queries like "setting Emacs window
+        title", the
+        <a class="ulink" href="http://www.emacswiki.org/emacs-en/FrameTitle" target="_top">Emacs
+        wiki</a> and
+        <a class="ulink" href="https://www.gnu.org/software/emacs/manual/html_node/efaq/Displaying-the-current-file-name-in-the-titlebar.html" target="_top">manual</a>
+        advise us to put something like this Elisp in our
+        <code class="literal">.emacs</code> file:
+      </p><pre class="programlisting">
+(setq frame-title-format "%f")
+</pre><p>
+        Now the output looks different:
+      </p><pre class="programlisting">
+$ xprop | tail -5
+WM_CLASS(STRING) = "emacs", "Emacs"
+WM_ICON_NAME(STRING) = "/home/gwern/arbtt.page"
+_NET_WM_ICON_NAME(UTF8_STRING) = "/home/gwern/arbtt.page"
+WM_NAME(STRING) = "/home/gwern/arbtt.page"
+_NET_WM_NAME(UTF8_STRING) = "/home/gwern/arbtt.page"
+</pre><p>
+        With this, we can usefully classify all such time samples as
+        being “writing”:
+      </p><pre class="programlisting">
+current window $title == "/home/gwern/arbtt.page" ==&gt; tag Writing,
+</pre><p>
+        Another common gap is terminals/shells: they often do not
+        include information in the title like the current working
+        directory or last shell command. For example, urxvt/Bash:
+      </p><pre class="programlisting">
+WM_COMMAND(STRING) = { "urxvt" }
+_NET_WM_ICON_NAME(UTF8_STRING) = "urxvt"
+WM_ICON_NAME(STRING) = "urxvt"
+_NET_WM_NAME(UTF8_STRING) = "urxvt"
+WM_NAME(STRING) = "urxvt"
+</pre><p>
+        Programmers may spend many hours in the shell doing a variety of
+        things (like Emacs), so this is a problem. Fortunately, this is
+        also solvable by customizing one's <code class="literal">.bashrc</code> to
+        set the prompt to emit an escape code interpreted by the
+        terminal (baroque, but it works). The following will include the
+        working directory, a timestamp, and the last command:
+      </p><pre class="programlisting">
+trap 'echo -ne "\033]2;$(pwd); $(history 1 | sed "s/^[ ]*[0-9]*[ ]*//g")\007"' DEBUG
+</pre><p>
+        Now the urxvt samples are useful:
+      </p><pre class="programlisting">
+_NET_WM_NAME(UTF8_STRING) = "/home/gwern/wiki; 2014-09-03 13:39:32 arbtt-stats --help"
+</pre><p>
+    Some distributions (e.g. Debian) already provide the relevant
+    configuration for this to happen. If it does not work for you, you can try to add
+    </p><pre class="programlisting">. /etc/profile.d/vte.sh</pre><p>
+    to your <code class="filename">~/.bashrc</code>.
+      </p><p>
+        A rule could classify based on the directory you are working in,
+        the command one ran, or both. Other shells like zsh can be fixed
+        this way too but the exact command may differ; you will need to
+        research and experiment.
+      </p><p>
+        Some programs can be tricky to set. The
+        <a class="ulink" href="http://feh.finalrewind.org/" target="_top">X image viewer
+        feh</a> has a <code class="literal">--title</code> option but it
+        cannot be set in the configuration file,
+        <code class="literal">.config/feh/themes</code>, because it needs to be
+        specified dynamically; so you need to set up a shell alias or
+        script to wrap the command like
+        <code class="literal">feh --title "$(pwd) / %f / %n"</code>.
+      </p></div><div class="sect3"><div class="titlepage"><div><div><h4 class="title"><a id="idp11"></a>Raw samples</h4></div></div></div><p>
+        <code class="literal">xprop</code> can be tedious to use on every running
+        window and you may forget to check seldomly used programs. A better
+        approach is to use <code class="literal">arbtt-stats</code>’s
+        <code class="literal">--dump-samples</code> option: this option will print
+        out the collected data for specified time periods, allowing you
+        to examine the X properties en masse. This option can be used
+        with the <code class="literal">--exclude=</code>
+        option to print the samples for <span class="emphasis"><em>samples not matched
+        by existing rules</em></span> as well, which is indispensable for
+        improving coverage and suggesting ideas for new rules. A good
+        way to figure out what customizations to make is to run arbtt as
+        a daemon for a day or so, and then begin examining the raw
+        samples for problems.
+      </p><div class="example"><a id="idp559"></a><p class="title"><strong>Example 2. An initial configuration session</strong></p><div class="example-contents"><p>
+        An example: suppose I create a simple category file named
+        <code class="literal">foo</code> with just the line
+      </p><pre class="programlisting">
+$idle &gt; 30 ==&gt; tag inactive
+</pre><p>
+        I can then dump all my arbtt samples for the past day with a
+        command like this:
+      </p><pre class="programlisting">
+arbtt-stats --categorizefile=foo --m=0 --filter='$sampleage &lt;24:00' --dump-samples
+</pre><p>
+        Because there are so many open windows, this produces a large
+        amount (26586 lines) of hard-to-read output:
+      </p><pre class="programlisting">
+...
+( ) Navigator:      /r/Touhou's Favorite Arranges! Part 71: Retribution for the Eternal Night ~ Imperishable Night : touhou - Iceweasel
+( ) Navigator:      Configuring the arbtt categorizer (arbtt-stats) - Iceweasel
+( ) evince:         ATTACHMENT02
+( ) evince:         2009-geisler.pdf — Heart rate variability predicts self-control in goal pursuit
+( ) urxvt:          /home/gwern; arbtt-stats --categorizefile=foo --m=0 --filter='$sampleage &lt;24:00' --dump-samples
+( ) mnemosyne:      Mnemosyne
+( ) urxvt:          /home/gwern; 2014-09-03 13:11:45 xprop
+( ) urxvt:          /home/gwern; 2014-09-03 13:42:17 history 1 | cut --delimiter=' ' --fields=5-
+( ) urxvt:          /home/gwern; 2014-09-03 13:12:21 git log -p .emacs
+(*) emacs:          emacs@elan
+( ) urxvt:          /home/gwern/blackmarket-mirrors/silkroad2-forums; 2014-08-31 23:20:10 mv /home/gwern/cookies.txt ./; http_proxy="localhost:8118" wget...
+( ) urxvt:          /home/gwern/blackmarket-mirrors/agora; 2014-08-31 23:15:50 mv /home/gwern/cookies.txt ./; http_proxy="localhost:8118" wget --mirror ...
+( ) urxvt:          /home/gwern/blackmarket-mirrors/evolution-forums; 2014-08-31 23:04:10 mv ~/cookies.txt ./; http_proxy="localhost:8118" wget --mirror ...
+( ) puddletag:      puddletag: /home/gwern/music
+</pre><p>
+        Active windows are denoted by an asterisk, so I can focus &amp;
+        simplify by adding a pipe like <code class="literal">| fgrep '(*)'</code>,
+        producing more manageable output like
+      </p><pre class="programlisting">
+(*) urxvt:          irssi
+(*) urxvt:          irssi
+(*) urxvt:          irssi
+(*) Navigator:      Pyramid of Technology - NextNature.net - Iceweasel
+(*) Navigator:      Search results - gwern0@gmail.com - Gmail - Iceweasel
+(*) Navigator:      [New comment] The Wrong Path - gwern0@gmail.com - Gmail - Iceweasel
+(*) Navigator:      Iceweasel
+(*) Navigator:      Litecoin Exchange Rate - $4.83 USD - litecoinexchangerate.org - Iceweasel
+(*) Navigator:      PredictionBook: LiteCoin will trade at &gt;=10 USD per ltc in 2 years, - Iceweasel
+(*) urxvt:          irssi
+(*) Navigator:      Bug#691547 closed by Mikhail Gusarov &lt;dottedmag@dottedmag.net&gt; (Re: s3cmd: Man page: --default-mime-type documentation incomplete...)
+(*) Navigator:      Bug#691547 closed by Mikhail Gusarov &lt;dottedmag@dottedmag.net&gt; (Re: s3cmd: Man page: --default-mime-type documentation incomplete...)
+(*) Navigator:      Bug#691547 closed by Mikhail Gusarov &lt;dottedmag@dottedmag.net&gt; (Re: s3cmd: Man page: --default-mime-type documentation incomplete...)
+(*) urxvt:          /home/gwern; 2014-09-02 14:25:17 man s3cmd
+(*) evince:         bayesiancausality.pdf
+(*) evince:         bayesiancausality.pdf
+(*) puddletag:      puddletag: /home/gwern/music
+(*) puddletag:      puddletag: /home/gwern/music
+(*) evince:         bayesiancausality.pdf
+(*) Navigator:      ▶ Umineko no Naku Koro ni Music Box 4 - オルガン小曲 第2億番 ハ短調 - YouTube - Iceweasel
+...
+</pre><p>
+        This is better. We can see a few things: the windows all now
+        produce enough information to be usefully classified (Gmail can
+        be classified under email, irssi can be classified as IRC, the
+        urxvt usage can clearly be classified as programming, the PDF
+        being read is statistics, etc) in part because of customizations
+        to bash/urxvt. The duplication still impedes focus, and we don't
+        know what's most common. We can use another pipeline to sort,
+        count duplicates, and sort by number of duplicates
+        (<code class="literal">| sort | uniq --count | sort --general-numeric-sort</code>),
+        yielding:
+      </p><pre class="programlisting">
+ ...
+ 14     (*) Navigator:      A Bluer Shade of White Chapter 4, a frozen fanfic | FanFiction - Iceweasel
+ 14     (*) Navigator:      Iceweasel
+ 15     (*) evince:         2009-geisler.pdf — Heart rate variability predicts self-control in goal pursuit
+ 15     (*) Navigator:      Tool use by animals - Wikipedia, the free encyclopedia - Iceweasel
+ 16     (*) Navigator:      Hacker News | Add Comment - Iceweasel
+ 17     (*) evince:         bayesiancausality.pdf
+ 17     (*) Navigator:      Comments - Less Wrong Discussion - Iceweasel
+ 17     (*) Navigator:      Keith Gessen · Why not kill them all?: In Donetsk · LRB 11 September 2014 - Iceweasel
+ 17     (*) Navigator:      Notes on the Celebrity Data Theft | Hacker News - Iceweasel
+ 18     (*) Navigator:      A Bluer Shade of White Chapter 1, a frozen fanfic | FanFiction - Iceweasel
+ 19     (*) gl:             mplayer2
+ 19     (*) Navigator:      Neural networks and deep learning - Iceweasel
+ 20     (*) Navigator:      Harry Potter and the Philosopher's Zombie, a harry potter fanfic | FanFiction - Iceweasel
+ 20     (*) Navigator:      [OBNYC] Time tracking app - gwern0@gmail.com - Gmail - Iceweasel
+ 25     (*) evince:         ps2007.pdf — untitled
+ 35     (*) emacs:          /home/gwern/arbtt.page
+ 43     (*) Navigator:      CCC comments on The Octopus, the Dolphin and Us: a Great Filter tale - Less Wrong - Iceweasel
+ 62     (*) evince:         The physics of information processing superobjects - Anders Sandberg - 1999.pdf — Brains2
+ 69     (*) liferea:        Liferea
+ 82     (*) evince:         BMS_raftery.pdf — untitled
+ 84     (*) emacs:          emacs@elan
+ 87     (*) Navigator:      overview for gwern - Iceweasel
+109     (*) puddletag:      puddletag: /home/gwern/music
+150     (*) urxvt:          irssi
+</pre><p>
+        Put this way, we can see what rules we should write to
+        categorize: we could categorize the activities here into a few
+        categories of "recreational", "statistics",
+        "music", "email", "IRC",
+        "research", and "writing"; and add to the
+        <code class="literal">categorize.cfg</code> some rules like thus:
+      </p><pre class="programlisting">
+$idle &gt; 30 ==&gt; tag inactive,
+
+current window $title =~ [/.*Hacker News.*/, /.*Less Wrong.*/, /.*overview for gwern.*/, /.*[fF]an[fF]ic.*/, /.* LRB .*/]
+  || current window $program == "liferea" ==&gt; tag Recreation,
+current window $title =~ [/.*puddletag.*/, /.*mplayer2.*/] ==&gt; tag Music,
+current window $title =~ [/.*[bB]ayesian.*/, /.*[nN]eural [nN]etworks.*/, /.*ps2007.pdf.*/, /.*[Rr]aftery.*/] ==&gt; tag Statistics,
+current window $title =~ [/.*Wikipedia.*/, /.*Heart rate variability.*/, /.*Anders Sandberg.*/] ==&gt; tag Research,
+current window $title =~ [/.*Gmail.*/] ==&gt; tag Email,
+current window $title =~ [/.*arbtt.*/] ==&gt; tag Writing,
+current window $title == "irssi" ==&gt; tag IRC,
+</pre><p>
+        If we reran the command, we'd see the same output, so we need to
+        leverage our new rules and <span class="emphasis"><em>exclude</em></span> any
+        samples matching our current tags, so now we run a command like:
+      </p><pre class="programlisting">
+arbtt-stats --categorizefile=foo --filter='$sampleage &lt;24:00' --dump-samples --exclude=Recreation --exclude=Music --exclude=Statistics
+             --exclude=Research --exclude=Email --exclude=Writing --exclude=IRC |
+             fgrep '(*)' | sort | uniq --count | sort --general-numeric-sort
+</pre><p>
+        Now the previous samples disappear, leaving us with a fresh
+        batch of unclassified samples to work with:
+      </p><pre class="programlisting">
+  9     (*) Navigator:      New Web Order &gt; Nik Cubrilovic - - Notes on the Celebrity Data Theft - Iceweasel
+  9     ( ) urxvt:          /home/gwern; arbtt-stats --categorizefile=foo --filter='$sampleage &lt;24:00' --dump-samples | fgrep '(*)' | less
+ 10     (*) evince:         ATTACHMENT02
+ 10     (*) Navigator:      These Giant Copper Orbs Show Just How Much Metal Comes From a Mine | Design | WIRED - Iceweasel
+ 12     (*) evince:         [Jon_Elster]_Alchemies_of_the_Mind_Rationality_an(BookFi.org).pdf — Alchemies of the mind
+ 12     (*) Navigator:      Morality Quiz/Test your Morals, Values &amp; Ethics - YourMorals.Org - Iceweasel
+ 33     ( ) urxvt:          /home/gwern; arbtt-stats --categorizefile=foo --filter='$sampleage &lt;24:00' --dump-samples | fgrep '(*)'...
+</pre><p>
+        We can add rules categorizing these as 'Recreational',
+        'Writing', 'Research', 'Recreational', 'Research', 'Writing',
+        and 'Writing' respectively; and we might decide at this point
+        that 'Writing' is starting to become overloaded, so we'll split
+        it into two tags, 'Writing' and 'Programming'. And then after
+        tossing another <code class="literal">--exclude=Programming</code> into
+        our rules, we can repeat the process.
+      </p><p>
+        As we refine our rules, we will quickly spot instances where the
+        title/class/program are insufficient to allow accurate
+        classification, and we will figure out the best collection of
+        tags for our particular purposes. A few iterations is enough for
+        most purposes.
+      </p></div></div><br class="example-break" /></div></div><div class="sect2"><div class="titlepage"><div><div><h3 class="title"><a id="idp17"></a>Categorizing advice</h3></div></div></div><p>
+      When building up rules, a few rules of thumb should be kept in
+      mind:
+    </p><div class="sect3"><div class="titlepage"><div><div><h4 class="title"><a id="idp13"></a>
+          Categorize by purpose, not by program
+        </h4></div></div></div><p>
+          This leads to misleading time reports. Avoid, for example,
+          lumping all web browser time into a single category named
+          'Internet'; this is more misleading than helpful. Good
+          categories describe an activity or goal, such as 'Work' or
+          'Recreation', not a tool, like 'Emacs' or 'Vim'.
+        </p></div><div class="sect3"><div class="titlepage"><div><div><h4 class="title"><a id="idp14"></a>
+          When in doubt, write narrow rules and generalize later
+        </h4></div></div></div><p>
+          Regexps are tricky and it can be easy to write rules far
+          broader than one intended. The <code class="literal">--exclude</code>
+          filters mean that one will never see samples which are matched
+          accidentally. If one is in doubt, it can be helpful to take a
+          specific sample one wants to match and several similar strings
+          and look at how well one's regexp rule works in Emacs's
+          <a class="ulink" href="http://www.emacswiki.org/emacs/ReBuilder" target="_top">regexp-builder</a>
+          or online regexp-testers like
+          <a class="ulink" href="http://regexpal.com/" target="_top">regexpal</a>.
+        </p></div><div class="sect3"><div class="titlepage"><div><div><h4 class="title"><a id="idp15"></a>
+          Don't try to classify everything
+        </h4></div></div></div><p>
+          You will never classify 100% of samples because sometimes
+          programs do not include useful X properties and cannot be
+          fixed, you have samples from before you fixed them, or they
+          are too transient (like popups and dialogues) to be worth
+          fixing. It is not necessary to classify 100% of your time,
+          since as long as the most common programs and, say,
+          <a class="ulink" href="https://en.wikipedia.org/wiki/Pareto_principle" target="_top">80%</a>
+          of your time is classified, then you have most of the value.
+          It is easy to waste more time tweaking arbtt than one gains
+          from increased accuracy or more finely-grained tags.
+        </p></div><div class="sect3"><div class="titlepage"><div><div><h4 class="title"><a id="idp16"></a>
+      Avoid large and microscopic tags
+    </h4></div></div></div><p>
+      If a tag takes up more than a third or so of your time, it is
+      probably too large, masks variation, and can be broken down into more
+      meaningful tags. Conversely, a tag too narrow to show up regularly in
+      reports (because it is below the default 1% filter) may not be
+      helpful because it is usually tiny, and can be combined with the most
+      similar tag to yield more compact and easily interpreted reports.
+    </p></div></div><div class="sect2"><div class="titlepage"><div><div><h3 class="title"><a id="idp18"></a>Long-term storage</h3></div></div></div><p>
+      Each halving of the sampling rate doubles the number of samples
+      taken and hence the storage requirement; sampling rates below 20s
+      are probably wasteful. But even the default 60s can accumulate
+      into a nontrivial amount of data over a year. A
+      constantly-changing binary file can interact poorly with backup
+      systems, may make arbtt analyses slower, and if one's system
+      occasionally crashes or experiences other problems, cause some
+      corruption of the log and be a nuisance in having to run
+      <code class="literal">arbtt-recover</code>.
+    </p><p>
+      Thus it may be a good idea to archive one's
+      <code class="literal">capture.log</code> on an annual basis. If one needs to
+      query the historical data, the particular log file can be
+      specified as an option like
+      <code class="literal">--logfile=/home/gwern/doc/arbtt/2013-2014.log</code>
+    </p></div><div class="sect2"><div class="titlepage"><div><div><h3 class="title"><a id="external-processing"></a>External processing of arbtt statistics</h3></div></div></div><p>
+      arbtt supports CSV export of time by category in various levels of
+      granularity in a 'long' format (multiple rows for each day, with
+      <span class="emphasis"><em>n</em></span> row specifying a category's value for that
+      day). These CSV exports can be imported into statistical programs
+      like R or Excel and manipulated as desired.
+    </p><p>
+      R users may prefer to have their time data in a 'wide' format
+      (each row is 1 day, with <span class="emphasis"><em>n</em></span> columns for each
+      possible category); this can be done with the
+      <code class="literal">reshape</code> default library. After reading in the
+      CSV, the time-intervals can be converted to counts and the data to
+      a wide data-frame with R code like the following:
+    </p><pre class="programlisting">
+arbtt &lt;- read.csv("arbtt.csv")
+interval &lt;- function(x) { if (!is.na(x)) { if (grepl(" s",x)) as.integer(sub(" s","",x))
+                                          else { y &lt;- unlist(strsplit(x, ":"));
+                                                 as.integer(y[[1]])*3600 + as.integer(y[[2]])*60 + as.integer(y[[3]]); }
+                                                 }
+                         else NA
+                         }
+arbtt$Time &lt;- sapply(as.character(arbtt$Time), interval)
+library(reshape)
+arbtt &lt;- reshape(arbtt, v.names="Time", timevar="Tag", idvar="Day", direction="wide")
+</pre></div><div class="sect2"><div class="titlepage"><div><div><h3 class="title"><a id="current-day"></a>Selecting the current day</h3></div></div></div><p>
+      This can be done easily with a bit of help from the command line:
+    </p><pre class="programlisting">arbtt-stats  --filter='$date&gt;='`date +"%Y-%m-%d"`</pre></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="configuration.html">Prev</a> </td><td width="20%" align="center"> </td><td width="40%" align="right"> <a accesskey="n" href="contributed.html">Next</a></td></tr><tr><td width="40%" align="left" valign="top">Configuring the arbtt categorizer (<span class="command"><strong>arbtt-stats</strong></span>) </td><td width="20%" align="center"><a accesskey="h" href="index.html">Home</a></td><td width="40%" align="right" valign="top"> Contributed tools</td></tr></table></div></body></html>

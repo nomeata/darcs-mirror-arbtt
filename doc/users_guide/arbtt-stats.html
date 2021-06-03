@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>arbtt-stats</title><link rel="stylesheet" type="text/css" href="fptools.css" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="home" href="index.html" title="arbtt – The Automatic Rule-Base Time Tracker" /><link rel="up" href="references.html" title="Program references" /><link rel="prev" href="references.html" title="Program references" /><link rel="next" href="arbtt-capture.html" title="arbtt-capture" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">arbtt-stats</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="references.html">Prev</a> </td><th width="60%" align="center">Program references</th><td width="20%" align="right"> <a accesskey="n" href="arbtt-capture.html">Next</a></td></tr></table><hr /></div><div class="refentry"><a id="arbtt-stats"></a><div class="titlepage"></div><div class="refnamediv"><h2>Name</h2><p>arbtt-stats — generate statistics from the arbtt data samples</p></div><div class="refsynopsisdiv"><h2>Synopsis</h2><div class="cmdsynopsis"><p><code class="command">arbtt-stats</code>  [OPTION...]</p></div></div><div class="refsect1"><a id="idp663"></a><h2>Description</h2><p>
+      <span class="command"><strong>arbtt-stats</strong></span> reads the samples that were recorded so far
+      by <span class="command"><strong>arbtt-capture</strong></span> from the log file, filters them
+      according to the users specifications and generates one or more reports
+      from the data.
+      </p><p>
+      When run without any options, <code class="option">--total-time</code> is assumed.
+      </p><p>
+      The order in which filters (<code class="option">--exclude</code>,
+      <code class="option">--only</code>, <code class="option">--also-inactive</code> and
+      <code class="option">--filter</code>) and reports are passed to the program is
+      irrelevant: All filters given on the command line are active for all
+      reports.
+      </p></div><div class="refsect1"><a id="idp675"></a><h2>Options</h2><div class="variablelist"><dl class="variablelist"><dt><span class="term"><code class="option">-h</code>, </span><span class="term"><code class="option">-?</code>, </span><span class="term"><code class="option">--help</code></span></dt><dd>shows a short summary of the available
+          options, and exists.</dd><dt><span class="term"><code class="option">-V</code>, </span><span class="term"><code class="option">--version</code></span></dt><dd>shows the version number, and exists.</dd><dt><span class="term"><code class="option">--logfile</code> <em class="replaceable"><code>FILE</code></em></span></dt><dd>logfile to use instead of <code class="filename">~/.arbtt/capture.log</code></dd><dt><span class="term"><code class="option">--categorizefile</code></span></dt><dd>categorize file to use instead of <code class="filename">~/.arbtt/categorize.cfg</code></dd></dl></div><div class="refsect2"><a id="idp707"></a><h3>Filtering options</h3><div class="variablelist"><dl class="variablelist"><dt><span class="term"><code class="option">-x</code> <em class="replaceable"><code>TAG</code></em>, </span><span class="term"><code class="option">--exclude</code> <em class="replaceable"><code>TAG</code></em></span></dt><dd>Ignore any data samples that have
+            been assigned this tag or category. To distinguish tags and categories, the latter have to be
+            entered followed by a colon. Can be given more than once.</dd><dt><span class="term"><code class="option">-o</code> <em class="replaceable"><code>TAG</code></em>, </span><span class="term"><code class="option">--only</code> <em class="replaceable"><code>TAG</code></em></span></dt><dd>Ignore any data samples that have
+            not been assigned this tag. To distinguish tags and categories, the latter have to be
+            entered followed by a colon. Can be given more than once.</dd><dt><span class="term"><code class="option">--also-inactive</code></span></dt><dd>by default, <span class="command"><strong>arbtt-stats</strong></span> ignores
+            any samples which have been assigned the tag
+            <code class="literal">inactive</code>. This flag disables this behaviour.</dd><dt><span class="term"><code class="option">-f</code> <em class="replaceable"><code>CONDITION</code></em>, </span><span class="term"><code class="option">--filter</code> <em class="replaceable"><code>CONDITION</code></em></span></dt><dd>Only consider samples matching
+            the given condition, which follows the same syntax as in
+            <code class="filename">categorize.cfg</code> (Nonterminal <a href="configuration.html#g-cond">Cond</a> in
+            <span class="phrase"><a class="xref" href="configuration.html#grammar" title="Figure 1. The formal grammar of categorize.cfg">Figure 1, “The formal grammar of <code class="filename">categorize.cfg</code>”</a></span>).</dd></dl></div></div><div class="refsect2"><a id="idp748"></a><h3>Report options</h3><div class="variablelist"><dl class="variablelist"><dt><span class="term"><code class="option">-m</code> <em class="replaceable"><code>PERCENTAGE</code></em>, </span><span class="term"><code class="option">--min-percentage</code> <em class="replaceable"><code>PERCENTAGE</code></em></span></dt><dd><p>
+              Ignore tags whose percentage is less than the value specified
+              here. Default percentage: 1%.
+            </p></dd><dt><span class="term"><code class="option">--output-exclude</code> <em class="replaceable"><code>TAG</code></em></span></dt><dd><p>
+              Skip this tag or category when printing statistics. Only affects
+              the reports <code class="option">--total-time</code> and
+              <code class="option">--category</code>. To distinguish tags and categories,
+              the latter have to be entered followed by a colon. Can be given
+              more than once.
+            </p></dd><dt><span class="term"><code class="option">--output-only</code> <em class="replaceable"><code>TAG</code></em></span></dt><dd><p>
+              Prints statistics only for the specified tag or category. Only
+              affects the reports <code class="option">--total-time</code> and
+              <code class="option">--category</code>. To distinguish tags and categories,
+              the latter have to be entered followed by a colon. Can be given
+              more than once.
+            </p></dd><dt><span class="term"><code class="option">--output-format</code> <em class="replaceable"><code>FORMAT</code></em></span></dt><dd><p>
+              Specify the report output format, may be one of: text, csv
+              (comma-separated values), tsv (TAB-separated values).
+              Default format: text.
+            </p></dd></dl></div></div><div class="refsect2"><a id="idp782"></a><h3>Reports</h3><div class="variablelist"><dl class="variablelist"><dt><span class="term"><code class="option">-i</code>, </span><span class="term"><code class="option">--information</code></span></dt><dd><p>
+              Various bits of information about the recorded data, such as total
+              time recorded, number of records etc. In this report, <span class="quote">“<span class="quote">time
+              recorded</span>”</span> is the sum of <span class="emphasis"><em>all</em></span>
+              samples, including inactive and those that are disabled by the
+              filter, while <span class="quote">“<span class="quote">time selected</span>”</span> is the sum of the
+              samples that are matched by the given filters.
+            </p></dd><dt><span class="term"><code class="option">-t</code>, </span><span class="term"><code class="option">--total-time</code></span></dt><dd><p>For all tags, print the part of the selected time
+            with this tag applied to, both as an absolute value and a percentage
+            of the selected time.
+            </p></dd><dt><span class="term"><code class="option">-c</code> <em class="replaceable"><code>CATEGORY</code></em>, </span><span class="term"><code class="option">--category</code> <em class="replaceable"><code>CATEGORY</code></em></span></dt><dd><p>For the given category, give the textual equivalent
+            of a pie chart: For each possible value of the category, including
+            one for <span class="quote">“<span class="quote">no tag of this category present</span>”</span>, give the absolute time and
+            fraction. Entries which are not displayed because of the option
+            <code class="option">--min-percentage</code> are aggregated.</p></dd><dt><span class="term"><code class="option">--each-category</code></span></dt><dd><p>This is just a shortcut for a series of
+            <code class="option">--category</code> options, one for each category found in
+            the data.
+            </p></dd><dt><span class="term"><code class="option">--intervals</code> [<em class="replaceable"><code>TAG</code></em>|<em class="replaceable"><code>CATEGORY</code></em>:] </span></dt><dd><p>This report lists all periods of consecutive time
+            intervals where the given tag has been applied to, or where the
+            given category has the same value.
+            </p><p>To distinguish tags and categories, the latter have to be
+            entered followed by a colon.</p><p>This report will give wrong results if an activity has been
+            carried out at the end of a session and right at the beginning, as
+            the intermediate time is thought to be part of the interval.
+            Inactive times while <span class="command"><strong>arbtt-capture</strong></span> is running
+            will separate the results as expected.</p></dd><dt><span class="term"><code class="option">--for-each</code> <em class="replaceable"><code>PERIOD</code></em></span></dt><dd><p>This is not a report of its own, but causes the selected
+            report to be executed for each of the given PERIOD (which can be
+            minute, hour,day, month or year) where there exist selected
+            samples. All the reports will then be printed one after another or,
+            in the case of CSV output, with an additional column.</p><p>Note that if this option is enabled, samples that are filtered out
+            are completely ignored (to avoid empty reports for periods with
+            only filtered samples). Therefore, the
+            <code class="option">--information</code> report will print the numbers for
+            the samples selected also for the totals.</p></dd></dl></div></div></div><div class="refsect1"><a id="idp837"></a><h2>Examples</h2><p>Some useful examples of what you can do with
+      <span class="command"><strong>arbtt-stats</strong></span> are provided here:</p><pre class="screen"># Only consider the time when I was programming in Haskell
+arbtt-stats -o Editing-Haskell
+
+# Tell me what evolution folders I spend my time in when I actually do
+# work with e-Mail
+arbtt-stats -o Program:evolution -c Evo-Folder
+
+# Generate statistics about the last hour
+arbtt-stats -f '$sampleage &lt; 1:00'</pre></div><div class="refsect1"><a id="idp842"></a><h2>Files</h2><div class="variablelist"><dl class="variablelist"><dt><span class="term"><code class="filename">~/.arbtt/capture.log</code></span></dt><dd><p>binary file, storing the arbtt data samples</p></dd><dt><span class="term"><code class="filename">~/.arbtt/categorize.cfg</code></span></dt><dd><p>specification of the arbtt categorizer syntax. A
+          detailed description is given in <a class="xref" href="configuration.html" title="Configuring the arbtt categorizer (arbtt-stats)">the section called “Configuring the arbtt categorizer (<span class="command"><strong>arbtt-stats</strong></span>)”</a></p></dd></dl></div></div><div class="refsect1"><a id="idp856"></a><h2>See also</h2><p>See the arbtt manual for more information and the <a class="ulink" href="http://hackage.haskell.org/package/arbtt" target="_top">arbtt hackage page</a> for
+      newer versions of arbtt.</p></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="references.html">Prev</a> </td><td width="20%" align="center"><a accesskey="u" href="references.html">Up</a></td><td width="40%" align="right"> <a accesskey="n" href="arbtt-capture.html">Next</a></td></tr><tr><td width="40%" align="left" valign="top">Program references </td><td width="20%" align="center"><a accesskey="h" href="index.html">Home</a></td><td width="40%" align="right" valign="top"> arbtt-capture</td></tr></table></div></body></html>
