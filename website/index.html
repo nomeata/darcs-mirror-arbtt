@@ -178,8 +178,8 @@ Program:Google Chrome |  3d15h24m00s |      21.60
                     </li>
 
                     <li>
-                        <b>Mac OS X support:</b>
-                        <p>arbtt can run on Mac OS X systems. To compile it, you need to install the pkgconfig and pcre source packages
+                        <b>macOS support:</b>
+                        <p>arbtt can run on macOS systems. To compile it, you need to install the pkgconfig and pcre source packages
                         using <a href="http://brew.sh">Homebrew</a> or <a href="https://www.macports.org">MacPorts</a>. For Homebrew, you can execute:</p>
                         <code class="command">brew install pkgconfig</code><br>
                         <code class="command">brew install pcre</code><br>
@@ -187,6 +187,7 @@ Program:Google Chrome |  3d15h24m00s |      21.60
                         <code class="command">sudo port install pkgconfig</code><br>
                         <code class="command">sudo port install pcre</code><br>
                         <p>Then, you can compile arbtt using the usual cabal commands.</p>
+                        <code class="command">cabal configure; cabal build; cabal install</code><br>
                         <p>If you use MacPorts and have a linking error, it may be because of a conflict between the system libiconv and the MacPorts libiconv.
                         Execute the following cabal command to resolve the conflict:</p>
                         <code class="command">cabal configure --extra-lib-dir=/usr/lib</code><br>
