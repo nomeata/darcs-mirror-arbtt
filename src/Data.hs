@@ -35,6 +35,7 @@ data CaptureData = CaptureData
         , cLastActivity :: Integer -- ^ in milli-seconds
         , cDesktop :: Text
                 -- ^ Current desktop name
+        , cScreenSaver :: Bool -- ^ Screen saver or locker active?
         }
   deriving (Show, Read, Generic, NFData)
 
@@ -118,19 +119,22 @@ instance StringReferencingBinary CaptureData where
 -- 2 Using ListOfStringable
 -- 3 Add cDesktop
 -- 4 WindowData instead of 3-tuple; CompactNum
+-- 5 Add cScreenSaver
  ls_put strs cd = do
         -- A version tag
-        putWord8 4
+        putWord8 5
         ls_put strs (cWindows cd)
         ls_put strs (cLastActivity cd)
         ls_put strs (cDesktop cd)
+        ls_put strs (cScreenSaver cd)
  ls_get strs = do
         v <- getWord8
         case v of
-         1 -> CaptureData <$> (map fromWDv0 . fromIntLenW <$> get) <*> get <*> pure ""
-         2 -> CaptureData <$> (map fromWDv0 . fromIntLenW <$> ls_get strs) <*> ls_get strs <*> pure ""
-         3 -> CaptureData <$> (map fromWDv0 . fromIntLenW <$> ls_get strs) <*> ls_get strs <*> (fromIntLen <$> ls_get strs)
-         4 -> CaptureData <$> ls_get strs <*> ls_get strs <*> ls_get strs
+         1 -> CaptureData <$> (map fromWDv0 . fromIntLenW <$> get) <*> get <*> pure "" <*> pure False
+         2 -> CaptureData <$> (map fromWDv0 . fromIntLenW <$> ls_get strs) <*> ls_get strs <*> pure "" <*> pure False
+         3 -> CaptureData <$> (map fromWDv0 . fromIntLenW <$> ls_get strs) <*> ls_get strs <*> (fromIntLen <$> ls_get strs) <*> pure False
+         4 -> CaptureData <$> ls_get strs <*> ls_get strs <*> ls_get strs <*> pure False
+         5 -> CaptureData <$> ls_get strs <*> ls_get strs <*> ls_get strs <*> ls_get strs
          _ -> error $ "Unsupported CaptureData version tag " ++ show v ++ "\n" ++
                       "You can try to recover your data using arbtt-recover."
 

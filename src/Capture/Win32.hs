@@ -24,5 +24,6 @@ captureData = do
                       | (h, t, p) <- titles]
 
         it <- fromIntegral `fmap` getIdleTime
+        -- TODO: screen saver/locker
 
-        return $ CaptureData winData it (T.pack "")
+        return $ CaptureData winData it (T.pack "") False

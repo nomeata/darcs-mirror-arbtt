@@ -42,7 +42,8 @@ instance ToJSON (TimeLogEntry CaptureData) where
         "rate" .= tlRate,
         "inactive" .= cLastActivity tlData,
         "windows" .= cWindows tlData,
-        "desktop" .= cDesktop tlData
+        "desktop" .= cDesktop tlData,
+        "screensaver" .= cScreenSaver tlData
         ]
 
 instance FromJSON (TimeLogEntry CaptureData) where
@@ -52,6 +53,7 @@ instance FromJSON (TimeLogEntry CaptureData) where
         cLastActivity <- v .: "inactive"
         cWindows  <- v .: "windows"
         cDesktop <- v .: "desktop"
+        cScreenSaver <- v .: "screensaver" .!= False
         let tlData = CaptureData {..}
         let entry = TimeLogEntry {..}
         pure entry
@@ -86,7 +88,7 @@ dumpActivity :: TimeLog (CaptureData, ActivityData) -> IO ()
 dumpActivity = mapM_ go
  where
     go tle = do
-        dumpHeader (tlTime tle) (cLastActivity cd)
+        dumpHeader (tlTime tle) (cLastActivity cd) (cScreenSaver cd)
         dumpDesktop (cDesktop cd)
         mapM_ dumpWindow (cWindows cd)
         dumpTags ad
@@ -97,12 +99,13 @@ dumpTags :: ActivityData -> IO ()
 dumpTags = mapM_ go
   where go act = printf "    %s\n" (show act)
 
-dumpHeader :: UTCTime -> Integer -> IO ()
-dumpHeader time lastActivity = do
+dumpHeader :: UTCTime -> Integer -> Bool -> IO ()
+dumpHeader time lastActivity screenSaver = do
     tz <- getCurrentTimeZone
-    printf "%s (%dms inactive):\n"
+    printf "%s (%dms inactive%s):\n"
         (formatTime defaultTimeLocale "%F %X" (utcToLocalTime tz time))
         lastActivity
+        (if screenSaver then ", screen saver/locker active" else [])
 
 dumpWindow :: WindowData -> IO ()
 dumpWindow WindowData{..} = do
@@ -122,7 +125,7 @@ dumpDesktop d
 
 dumpSample :: TimeLogEntry CaptureData -> IO ()
 dumpSample tle = do
-    dumpHeader (tlTime tle) (cLastActivity (tlData tle))
+    dumpHeader (tlTime tle) (cLastActivity (tlData tle)) (cScreenSaver (tlData tle))
     dumpDesktop (cDesktop (tlData tle))
     mapM_ dumpWindow (cWindows (tlData tle))
 

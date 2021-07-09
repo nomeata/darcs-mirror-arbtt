@@ -233,6 +233,10 @@
     </para>
 
     <para>
+      The variable <literal>$screensaver</literal> …
+    </para>
+
+    <para>
       When applying the rules, the categorizer has a notion of
       the <emphasis>window in scope</emphasis>, and the variables
       <literal>$title</literal>, <literal>$program</literal>,
@@ -425,6 +429,7 @@
          <nonterminal def="#g-timediff"/> </rhs>
             <rhs> <nonterminal def="#g-date"/> <nonterminal def="#g-cmpop"/>
          <nonterminal def="#g-date"/> </rhs>
+            <rhs> <quote>$screensaver</quote> </rhs>
             <rhs> <quote>current window</quote> <nonterminal def="#g-cond"/> </rhs>
             <rhs> <quote>any window</quote> <nonterminal def="#g-cond"/> </rhs>
             <rhs> <quote>$</quote> Literal </rhs>

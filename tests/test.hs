@@ -38,14 +38,14 @@ regressionTests = testGroup "Regression tests"
     [ testCase "Issue #4" $ do
         cat <- readCategorizer "tests/issue4.cfg"
         let wd = WindowData{ wActive = True, wHidden = False, wTitle = "aa", wProgram = "program", wDesktop = "" }
-        let sample = TimeLogEntry undefined 0 (CaptureData [wd] 0 "")
+        let sample = TimeLogEntry undefined 0 (CaptureData [wd] 0 "" False)
         let [TimeLogEntry _ _ (_,acts)] = cat [sample]
         [Activity (Just "Cat") "aa"] @=? acts
         return ()
     , testCase "Issue #5" $ do
         cat <- readCategorizer "tests/issue5.cfg"
         let wd = WindowData{ wActive = True, wHidden = False, wTitle = "aa", wProgram = "program", wDesktop = "" }
-        let sample = TimeLogEntry undefined 0 (CaptureData [wd] 0 "")
+        let sample = TimeLogEntry undefined 0 (CaptureData [wd] 0 "" False)
         let [TimeLogEntry _ _ (_,acts)] = cat [sample]
         [Activity Nothing "A2"] @=? acts
         return ()
@@ -55,7 +55,7 @@ regressionTests = testGroup "Regression tests"
         let backThen = (-60*60*101) `addUTCTime` now
 
         let wd = WindowData{ wActive = True, wHidden = False, wTitle = "aa", wProgram = "program", wDesktop = "" }
-        let sample = TimeLogEntry backThen 0 (CaptureData [wd] 0 "")
+        let sample = TimeLogEntry backThen 0 (CaptureData [wd] 0 "" False)
         let [TimeLogEntry _ _ (_,acts)] = cat [sample]
         [Activity Nothing "old"] @=? acts
         return ()
